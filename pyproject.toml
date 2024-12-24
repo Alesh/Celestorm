@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Celestorm"
+description = "Celestorm execution layer"
+readme = "README.md"
+license = { text = "BSD-2-Clause" }
+requires-python = ">= 3.12"
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[tool.setuptools.packages.find]
+include = ["celestorm"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+optional-dependencies.test = { file = ["tests/requirements.txt"] }
