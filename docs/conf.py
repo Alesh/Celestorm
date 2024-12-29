@@ -7,10 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Celestorm'
-copyright = '2025, Alexey Poryadin'
-github_username = 'Alesh'
-github_repository = 'https://github.com/Alesh/Celestorm'
-author = 'Alexey Poryadin'
+copyright = '2025, Alesh'
+author = 'Alesh'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -21,8 +19,11 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
+
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = []
+
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
