@@ -26,6 +26,9 @@ class Package[U](bytes, ABC):
     to a string of bytes, hashed, and possibly signed with. This approach allows
     you to ensure the security of data transmission in a distributed system.
 
+    To define how to deserialize the packet and into which instructions,
+    you need to override the protected method :meth:`._instruction_deserializer`.
+
     Args:
         instructions: instructions to serialize.
         hasher: hashing object to use; defaults sha256

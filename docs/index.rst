@@ -16,6 +16,7 @@ independence.
     Key features <key_features>
     Exception classes <errors>
     Data encoding and packaging <encoding>
+    Transport to the platform <transport>
 
 Glossary
 --------

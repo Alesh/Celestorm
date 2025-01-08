@@ -17,3 +17,12 @@ include = ["celestorm"]
 dependencies = { file = ["requirements.txt"] }
 optional-dependencies.docs = { file = ["docs/requirements.txt"] }
 optional-dependencies.test = { file = ["tests/requirements.txt"] }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+    "integration",
+]

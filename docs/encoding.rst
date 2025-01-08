@@ -1,5 +1,5 @@
-:sub:`celestorm.encoding` Data encoding and packaging
----------------------------------------------------------
+Data encoding and packaging
+---------------------------
 .. automodule:: celestorm.encoding
 
     .. autoclass:: celestorm.encoding.Instruction(Generic[U], ABC)
@@ -11,8 +11,8 @@
         :member-order: bysource
 
 
-:sub:`celestorm.encoding.protocols` Data encoding protocols
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Data encoding protocols
+"""""""""""""""""""""""
 .. automodule:: celestorm.encoding.protocols
 
     .. autoclass:: celestorm.encoding.protocols.Entity(Protocol[U])
