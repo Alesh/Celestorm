@@ -8,13 +8,10 @@ from tests.simple.impl.encoding import Package
 from tests.simple.impl.transport import Transport
 
 
-@pytest.fixture(scope='module')
-def accum():
-    yield deque(maxlen=64)
 
-
-async def test_transmitter(accum, caplog, small_bundles_maker):
+async def test_transmitter(caplog, small_bundles_maker):
     result = []
+    accum = deque(maxlen=64)
     transport = Transport()
     caplog.set_level(logging.INFO)
     bundles = small_bundles_maker()

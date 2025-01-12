@@ -5,9 +5,15 @@ from collections.abc import AsyncIterator
 from celestorm.encoding import Instruction, Package
 
 
+class ConnectionClosed(ConnectionError):
+    """ Raised when trying to use a connection that was closed by
+    the `.close` method.
+    """
+
+
 class Connection[U](ABC):
     """ This is an abstract base class that defines a partially implemented
-    interface for receiving and transmitting packets from a supporting platform.
+    interface for transmitting and receiving packets from a supporting platform.
     """
 
     def __init__(self):
@@ -29,7 +35,7 @@ class Connection[U](ABC):
             kwargs: Keyword arguments reserved for use in implementation.
 
         Returns:
-            Synchronization round in which a instruction package was accepted by
+            Synchronization round in which an instruction package was accepted by
             the supporting platform.
 
         Raises:
@@ -61,13 +67,20 @@ class Connection[U](ABC):
         """
         if not self.connected:
             raise ConnectionError("Not connected")
-        async for sync_round, package, args in self._recv_packages(after_sync_round, *args, **kwargs):
-            packager = self._packager_factory(*args, **kwargs)
-            yield sync_round, packager(package)
+        try:
+            async for sync_round, package, args in self._recv_packages(after_sync_round, *args, **kwargs):
+                packager = self._packager_factory(*args, **kwargs)
+                yield sync_round, packager(package)
+        except ConnectionClosed:
+            pass
 
-    async def _open_connection(self) -> None:
+    async def _open_connection(self, *args: t.Any, **kwargs: t.Any) -> None:
         """ This method should be overridden by subclasses to establish
         connection to the supporting platform.
+
+        Args:
+            args: Arguments reserved for use in implementation.
+            kwargs: Keyword arguments reserved for use in implementation.
         """
         self.__connected = True
 

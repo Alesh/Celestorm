@@ -81,3 +81,5 @@ class Instruction[U](ABC):
     @abstractmethod
     def _deserialize(cls, data: bytes) -> 'Instruction[U]':
         """ Deserializes the instruction from a byte string. """
+        method = f'{cls.__module__}.{cls.__name__}._deserialize'
+        raise NotImplementedError(f"You can't use a non-implemented method `{method}` here.")

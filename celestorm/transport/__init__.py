@@ -72,7 +72,7 @@ class Transport[U](ABC):
             connection = self._connection_factory(*args, **kwargs)
             try:
                 self._connections.append(connection)
-                await connection._open_connection()
+                await connection._open_connection(*args, **kwargs)
                 transmitter = Transmitter[U](connection)
                 yield transmitter
                 await transmitter.send_instructions(*args, **kwargs)
