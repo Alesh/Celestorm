@@ -12,13 +12,13 @@ from tests.simple.impl.transport import Transport
 async def test_transmitter(caplog, small_bundles_maker):
     result = []
     accum = deque(maxlen=64)
-    transport = Transport()
+    transport = Transport(accum)
     caplog.set_level(logging.INFO)
     bundles = small_bundles_maker()
 
     last_round = 0
     for instructions in bundles:
-        async with transport.transmitter(accum, last_round) as transmit:
+        async with transport.transmitter(last_round) as transmit:
             for instruction in instructions:
                 transmit(instruction)
         if transmit.sync_round is not None:
@@ -57,10 +57,10 @@ async def test_receiver(small_bundles_maker):
     bundles = small_bundles_maker()
     ref_packages = [(N + 1, Package.build(bundles[N])) for N in range(len(bundles))]
 
-    async def transmitting(transport, accum):
+    async def transmitting(transport):
         last_round = 0
         for instructions in bundles:
-            async with transport.transmitter(accum, last_round) as transmit:
+            async with transport.transmitter(last_round) as transmit:
                 for instruction in instructions:
                     transmit(instruction)
             if transmit.sync_round is not None:
@@ -74,9 +74,9 @@ async def test_receiver(small_bundles_maker):
     ]:
         result = dict()
         accum = deque(maxlen=64)
-        transport = Transport()
+        transport = Transport(accum)
 
-        tasks.add(asyncio.create_task(transmitting(transport, accum)))
+        tasks.add(asyncio.create_task(transmitting(transport)))
 
         last_sync_round = 0
         asyncio.get_running_loop().call_later(timeout, lambda: transport._connections[-1].close())

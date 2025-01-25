@@ -1,3 +1,4 @@
+import asyncio
 import typing as t
 from abc import abstractmethod, ABC
 from collections.abc import AsyncIterator
@@ -5,6 +6,9 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from celestorm.encoding import Instruction, Package
 from .connection import Connection
+
+
+type TransportFactory[U] = t.Callable[[], Transport[U]]
 
 
 class Transmitter[U]:
@@ -56,6 +60,16 @@ class Transport[U](ABC):
 
     def __init__(self):
         self._connections = list()  # type: list[Connection[U]]
+        self._close_task: asyncio.Task | None = None
+
+    @property
+    def active(self) -> bool:
+        return len(self._connections) > 0
+
+    def close(self):
+        """ Close the all transport connections."""
+        for connection in self._connections:
+            connection.close()
 
     def transmitter(self, *args: t.Any, **kwargs: t.Any) -> AbstractAsyncContextManager['Transmitter[U]', bool]:
         """ This method returns a context manager that creates and manages
