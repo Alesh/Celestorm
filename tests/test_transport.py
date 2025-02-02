@@ -4,8 +4,8 @@ from collections import deque
 
 import pytest
 
-from tests.simple.impl.encoding import Package
-from tests.simple.impl.transport import Transport
+from celestorm.examples.impl.encoding import Package
+from celestorm.examples.impl.transport import Transport
 
 
 

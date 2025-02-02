@@ -2,9 +2,8 @@ from datetime import datetime
 
 import pytest
 
-from celestorm.samples.simldcls import Instruction
-from tests.modcls import Account, Message
-from tests.simple.impl.encoding import Package
+from tests.impl.dclscud import Instruction, Package
+from tests.models import Account, Message
 
 
 @pytest.fixture(scope="session")
@@ -93,4 +92,3 @@ def cud_state_maker():
         }
 
     return state_maker
-

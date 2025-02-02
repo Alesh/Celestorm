@@ -1,17 +1,18 @@
-from celestorm.errors import ExecutionError
-
-
-class EncodingError(ExecutionError):
-    """ Common encoding error. """
+class EncodingError(Exception):
+    """ A general encoding error. """
 
 
 class SerializeError(EncodingError):
-    """ Raises when serialization fails. """
+    """ An error during instruction serialization into a package. """
 
 
 class DeserializeError(EncodingError):
-    """ Raises when deserialization fails. """
+    """ An error during instruction package deserialization. """
+
+
+class SignError(EncodingError):
+    """ An error during an unsuccessful attempt to sign the instruction package. """
 
 
 class VerifyError(EncodingError):
-    """ Raises when instruction package verification failed. """
+    """ An error due to a violation of the instruction package's integrity. """

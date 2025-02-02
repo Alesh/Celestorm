@@ -1,6 +1,6 @@
 import logging
 
-from tests.simple.impl.executing import Finalizer
+from celestorm.examples.impl.executing import Finalizer
 
 
 async def test_storage_finalizer(caplog, small_bundles_maker, small_state_maker):

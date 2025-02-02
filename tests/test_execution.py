@@ -2,8 +2,8 @@ import asyncio
 import logging
 from collections import deque
 
-from tests.simple.impl.executing import Finalizer, Layer
-from tests.simple.impl.transport import Transport
+from celestorm.examples.impl.executing import Finalizer, Layer
+from celestorm.examples.impl.transport import Transport
 
 
 async def transmitting(transport_factory, bundles):

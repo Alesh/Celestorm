@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 import celestorm.transport
-from .encoding import Package
+from .dclscud import Package
 
 
 class Connection(celestorm.transport.Connection):

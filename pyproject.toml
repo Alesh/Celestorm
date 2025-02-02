@@ -15,9 +15,7 @@ include = ["celestorm"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
-optional-dependencies.docs = { file = ["docs/requirements.txt"] }
 optional-dependencies.test = { file = ["tests/requirements.txt"] }
-optional-dependencies.celestia = { file = ["samples/celestia/requirements.txt"] }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

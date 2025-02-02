@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from celestorm.samples.simldcls import Instruction
+from tests.impl.dclscud import Instruction
 
 
 @dataclass
