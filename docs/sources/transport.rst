@@ -1,15 +1,25 @@
-Transport to the platform
--------------------------
+Data Transport
+==============
+
 .. automodule:: celestorm.transport
 
-    .. autoclass:: celestorm.transport.Connection(Generic[U], ABC)
-        :members:
-        :member-order: bysource
+.. autoclass:: celestorm.transport.Transport(Generic[U], ABC)
+    :members:
+    :member-order: bysource
+    :private-members:
 
-    .. autoclass:: celestorm.transport.Transmitter(Generic[U])
-        :members:
-        :member-order: bysource
 
-    .. autoclass:: celestorm.transport.Transport(Generic[U], ABC)
-        :members:
-        :member-order: bysource
+Data Transport Protocols
+------------------------
+.. automodule:: celestorm.transport.protocols
+    :members:
+
+
+Data Transport Errors
+---------------------
+.. automodule:: celestorm.transport.errors
+    :members:
+
+
+
+

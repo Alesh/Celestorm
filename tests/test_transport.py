@@ -4,8 +4,7 @@ from collections import deque
 
 import pytest
 
-from celestorm.examples.impl.encoding import Package
-from celestorm.examples.impl.transport import Transport
+from tests.impl.dclscud import Package, Transport
 
 
 
@@ -30,7 +29,7 @@ async def test_transmitter(caplog, small_bundles_maker):
         "Sync round# 1; 2 instructions are sent",
         "Sync round# 2; 1 instructions are sent"
     ]
-    assert tuple(accum) == tuple((N + 1, Package.build(bundles[N])) for N in range(len(bundles)))
+    assert tuple(accum) == tuple((N + 1, Package(bundles[N])) for N in range(len(bundles)))
 
 
 async def test_transmitter_connection_close_error(small_bundles_maker):
@@ -38,7 +37,7 @@ async def test_transmitter_connection_close_error(small_bundles_maker):
     transport = Transport()
     bundles = small_bundles_maker()
 
-    asyncio.get_running_loop().call_later(0.21, lambda: transport._connections[-1].close())
+    asyncio.get_running_loop().call_later(0.21, lambda: transport.close())
     with pytest.raises(ConnectionError, match="Connection closed"):
         last_round = 0
         for instructions in bundles:
@@ -55,7 +54,7 @@ async def test_transmitter_connection_close_error(small_bundles_maker):
 async def test_receiver(small_bundles_maker):
     tasks = set()
     bundles = small_bundles_maker()
-    ref_packages = [(N + 1, Package.build(bundles[N])) for N in range(len(bundles))]
+    ref_packages = [(N + 1, Package(bundles[N])) for N in range(len(bundles))]
 
     async def transmitting(transport):
         last_round = 0
@@ -76,17 +75,17 @@ async def test_receiver(small_bundles_maker):
         accum = deque(maxlen=64)
         transport = Transport(accum)
 
-        tasks.add(asyncio.create_task(transmitting(transport)))
+        tasks.add(asyncio.create_task(transmitting(Transport(accum))))
 
         last_sync_round = 0
-        asyncio.get_running_loop().call_later(timeout, lambda: transport._connections[-1].close())
+        asyncio.get_running_loop().call_later(timeout, lambda: transport.close())
         async with transport.receiver(last_sync_round, accum) as receiver:
             async for sync_round, package in receiver:
-                for instruction in package.deserialize():
+                async for instruction in package.deserialize():
                     result.setdefault(sync_round, []).append(instruction)
 
         assert list(result.keys()) == ref
-        assert (tuple(Package.build(instructions) for instructions in result.values())
+        assert (tuple(Package(instructions) for instructions in result.values())
                 == tuple(package for _, package in ref_packages[:len(ref)]))
 
     await asyncio.gather(*tasks)

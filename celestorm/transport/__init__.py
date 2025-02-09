@@ -1,142 +1,138 @@
-import asyncio
+"""
+The *celestorm.transport* module contains generic abstract classes and
+protocols for interacting with the distributed system's network. Their concrete
+implementations enable the reception and transmission of instruction packages
+over the network. The module's components are typed with the distributed system's
+object identifier (U).
+"""
 import typing as t
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
-from celestorm.encoding import Instruction, Package
-from .connection import Connection
+from celestorm.encoding import Package
+from celestorm.encoding.protocols import Instruction
+from .errors import ConnectionClosed
+from .protocols import Connection, Transmitter
 
-
-type TransportFactory[U] = t.Callable[[], Transport[U]]
-
-
-class Transmitter[U]:
-    """ Instruction transmitter.
-
-    An instance of this class is responsible for collecting instructions into
-    a package and then sending them to the supporting platform.
-    """
-
-    def __init__(self, connection: Connection[U]):
-        self._connection = connection
-        self._instructions: list[Instruction] = []
-        self.__sync_round = None  # type: int |None
-
-    def __call__(self, instruction: Instruction[U]):
-        self._instructions.append(instruction)
-
-    @property
-    def sync_round(self) -> int | None:
-        """ The number of the synchronization round in which the transmitted
-        packet was accepted by the platform. Until the successful sending of
-        the packet is completed, the property will contain 0.
-        """
-        return self.__sync_round
-
-    @property
-    def sent_count(self) -> int:
-        """ The number of instructions sent in the packet. """
-        return len(self._instructions) if self.sync_round is not None else 0
-
-    async def send_instructions(self, *args: t.Any, **kwargs: t.Any):
-        """ Sends instructions to the platform.
-
-        Args:
-            args: Arguments reserved for use in implementation.
-            kwargs: Keyword arguments reserved for use in implementation.
-        """
-        self.__sync_round = await self._connection.send_instructions(self._instructions, *args, **kwargs)
+__all__ = ('Transport',)
 
 
 class Transport[U](ABC):
-    """ Transport for interacting with the platform.
-
-    This class encapsulates and coordinates the methods responsible for exchanging
-    data with the supporting platform. The concrete implementation of the connection
-    to the platform must be implemented in a descendant of the :class:`~celestorm.transport.Connection` class
-    and associated with the transport by overriding the protected method :meth:`._connection_factory`.
+    """ A generic abstract base class with partial implementation that defines
+    the transport layer for receiving and sending instruction packages over the
+    distributed system's network.
     """
 
     def __init__(self):
-        self._connections = list()  # type: list[Connection[U]]
-        self._close_task: asyncio.Task | None = None
+        self._connections = set()  # type: set[Connection[U]]
 
     @property
     def active(self) -> bool:
+        """ Returns `True` if there are active network connections. """
         return len(self._connections) > 0
 
     def close(self):
-        """ Close the all transport connections."""
+        """ Closes all active network connections. """
         for connection in self._connections:
             connection.close()
 
     def transmitter(self, *args: t.Any, **kwargs: t.Any) -> AbstractAsyncContextManager['Transmitter[U]', bool]:
-        """ This method returns a context manager that creates and manages
-        an instance of the `Transmitter` class. Packets are sent when they
-        exit the context.
+        """ Returns a context manager for accumulating instructions.
+        Upon entering the context, a connection is established, and an object
+        implementing the ``celestorm.transport.protocols.Transmitter`` protocol
+        is returned, accepting instructions. Upon exiting the context,
+        the collected instructions are automatically packed into a package
+        and sent over the network.
 
         Args:
-            args: Arguments reserved for use in implementation.
-            kwargs: Keyword arguments reserved for use in implementation.
+            args: Reserved positional arguments.
+            kwargs: Reserved named arguments.
         """
+        instructions: list[Instruction[U]] = []
+
+        class _Transmitter:
+            sync_round: int | None = None
+            sent_count: int = 0
+
+            def __call__(self, instruction: Instruction[U]):
+                instructions.append(instruction)
 
         @asynccontextmanager
         async def enter_transmitter_context():
+            packager = self._packager_factory(*args, **kwargs)
             connection = self._connection_factory(*args, **kwargs)
+            assert isinstance(connection, Connection)
             try:
-                self._connections.append(connection)
-                await connection._open_connection(*args, **kwargs)
-                transmitter = Transmitter[U](connection)
+                self._connections.add(connection)
+                await connection.open_connection(*args, **kwargs)
+                transmitter = _Transmitter()
                 yield transmitter
-                await transmitter.send_instructions(*args, **kwargs)
+                package = packager(instructions)
+                transmitter.sync_round = await connection.send_package(package, *args, **kwargs)
+                transmitter.sent_count = len(instructions)
             finally:
                 self._connections.remove(connection)
-                await connection._close_connection()
+                await connection.close_connection()
 
         return enter_transmitter_context()
 
-    def receiver(self, after_sync_round: int, *args: t.Any, **kwargs: t.Any) \
+    def receiver(self, from_round: int, *args: t.Any, **kwargs: t.Any) \
             -> AbstractAsyncContextManager[AsyncIterator[tuple[int, Package[U]]], bool]:
-        """ This method returns a context manager that creates an asynchronous
-        iterator that yields instructions from the supporting platform.
-        The context manager also manages the connection created for the iterator.
+        """ Returns a context manager for receiving instructions. Upon entering
+        the context, a connection is established, and an async iterator
+        of instructions is returned.
 
         Args:
-            after_sync_round: The sync round number after which to receive instructions.
-            args: Arguments reserved for use in implementation.
-            kwargs: Keyword arguments reserved for use in implementation.
+            from_round: The sync round number from which instruction retrieval begins.
+            args: Reserved positional arguments.
+            kwargs: Reserved named arguments.
 
         Returns:
-            An asynchronous iterator that returns a tuple consisting of the
-            sync cycle number and a package of serialized instructions.
-
-        Raises:
-            ConnectionError: If error occurred while receiving packages.
+            An async iterator yielding a tuple of the sync round and
+            the corresponding instruction package.
         """
 
         async def _receiver(connection: Connection[U]):
-            async for sync_round, package in connection.recv_instructions(after_sync_round, *args, **kwargs):
-                yield sync_round, package
+            nonlocal from_round, args, kwargs
+            try:
+                async for sync_round, package, args_ in connection.recv_packages(from_round, *args, **kwargs):
+                    packager = self._packager_factory(*args_, **kwargs)
+                    yield sync_round, packager(package)
+            except ConnectionClosed:
+                pass
 
         @asynccontextmanager
         async def enter_receiver_context():
             connection = self._connection_factory(*args, **kwargs)
+            assert isinstance(connection, Connection)
             try:
-                self._connections.append(connection)
-                await connection._open_connection()
+                self._connections.add(connection)
+                await connection.open_connection()
                 yield _receiver(connection)
             finally:
                 self._connections.remove(connection)
-                await connection._close_connection()
+                await connection.close_connection()
 
         return enter_receiver_context()
 
     @abstractmethod
-    def _connection_factory(self, *args: t.Any, **kwargs: t.Any) -> Connection[U]:
-        """ This method must return an instance of the Connection class.
+    def _packager_factory(self, *args: t.Any, **kwargs: t.Any) \
+            -> type[Package[U]] | t.Callable[[bytes | t.Sequence[Instruction[U]]], Package[U]]:
+        """ Must return a class implementing the instruction package
+        ``celestorm.encoding.Package`` or a function creating its instance.
 
         Args:
-            args: Arguments reserved for use in implementation.
-            kwargs: Keyword arguments reserved for use in implementation.
+            args: Reserved positional arguments.
+            kwargs: Reserved named arguments.
+        """
+
+    @abstractmethod
+    def _connection_factory(self, *args: t.Any, **kwargs: t.Any) -> Connection[U]:
+        """ Must return a class implementing the network interaction protocol
+        ``celestorm.transport.protocols.Connection``.
+
+        Args:
+            args: Reserved positional arguments.
+            kwargs: Reserved named arguments.
         """

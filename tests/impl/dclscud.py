@@ -4,8 +4,9 @@ from dataclasses import is_dataclass, astuple
 from datetime import datetime
 
 import tests.impl.encoding
-from celestorm.encoding.protocols import Entity
+import tests.impl.transport
 from celestorm.encoding.errors import DeserializeError
+from celestorm.encoding.protocols import Entity
 from tests.impl.encoding import OID
 
 
@@ -70,3 +71,10 @@ class Package(tests.impl.encoding.Package):
 
     def _deserialize_instruction(self, instruction: bytes):
         return Instruction.deserialize(instruction)
+
+
+class Transport(tests.impl.transport.Transport):
+    """ Example of transport that uses packages adapted to use dataclass. """
+
+    def _packager_factory(self, *args: t.Any, **kwargs: t.Any):
+        return Package
