@@ -1,9 +1,10 @@
 import json
 import typing as t
-from dataclasses import is_dataclass, astuple
+from dataclasses import is_dataclass, astuple, asdict
 from datetime import datetime
 
 import tests.impl.encoding
+import tests.impl.execution
 import tests.impl.transport
 from celestorm.encoding.errors import DeserializeError
 from celestorm.encoding.protocols import Entity
@@ -78,3 +79,23 @@ class Transport(tests.impl.transport.Transport):
 
     def _packager_factory(self, *args: t.Any, **kwargs: t.Any):
         return Package
+
+
+class Storage(tests.impl.execution.Storage):
+
+    async def finalize_instruction(self, instruction: Instruction):
+        if self._sync_round is None:
+            raise RuntimeError("You need to call begin_transaction before finalizing")
+        if instruction.method == 'CREATE':
+            self._temp[instruction.oid] = (self._sync_round, astuple(instruction.payload))
+        elif instruction.method == 'UPDATE':
+            dcls = instruction.oid[0]
+            revision, args = self._temp[instruction.oid]
+            assert revision == instruction.revision
+            old_state = dcls(*args)
+            new_state = dcls(**dict(asdict(old_state), **instruction.payload))
+            self._temp[instruction.oid] = (self._sync_round, astuple(new_state))
+        else:
+            revision, args = self._temp[instruction.oid]
+            assert revision == instruction.revision
+            del self._temp[instruction.oid]
