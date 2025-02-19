@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from tests.impl.dclscud import Instruction
+from tests.dclscud import Instruction
 
 
 @dataclass

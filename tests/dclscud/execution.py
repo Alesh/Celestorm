@@ -1,6 +1,7 @@
 import typing as t
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from dataclasses import asdict, astuple
 
 import celestorm.execution
 from .encoding import OID, Instruction
@@ -25,9 +26,22 @@ class Storage(celestorm.execution.TransactedStorage, ABC):
         self._sync_round = sync_round
         self._temp = deepcopy(self._storage)
 
-    @abstractmethod
     async def finalize_instruction(self, instruction: Instruction):
-        pass
+        if self._sync_round is None:
+            raise RuntimeError("You need to call begin_transaction before finalizing")
+        if instruction.method == 'CREATE':
+            self._temp[instruction.oid] = (self._sync_round, astuple(instruction.payload))
+        elif instruction.method == 'UPDATE':
+            dcls = instruction.oid[0]
+            revision, args = self._temp[instruction.oid]
+            assert revision == instruction.revision
+            old_state = dcls(*args)
+            new_state = dcls(**dict(asdict(old_state), **instruction.payload))
+            self._temp[instruction.oid] = (self._sync_round, astuple(new_state))
+        else:
+            revision, args = self._temp[instruction.oid]
+            assert revision == instruction.revision
+            del self._temp[instruction.oid]
 
     async def commit_transaction(self):
         deleted_keys = set(self._storage) - set(self._temp)

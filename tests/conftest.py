@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from tests.impl.dclscud import Instruction, Package
+from tests.dclscud import Instruction, Package
 from tests.models import Account, Message
 
 

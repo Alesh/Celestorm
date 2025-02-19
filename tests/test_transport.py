@@ -4,7 +4,7 @@ from collections import deque
 
 import pytest
 
-from tests.impl.dclscud import Package, Transport
+from tests.dclscud import Package, Transport
 
 
 

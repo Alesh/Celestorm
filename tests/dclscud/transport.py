@@ -30,7 +30,7 @@ class Connection(celestorm.transport.Connection):
         self.close()
 
     async def send_package(self, package: Package,
-                            last_round: int = 0, *args: t.Any, **kwargs: t.Any):
+                           last_round: int = 0, *args: t.Any, **kwargs: t.Any):
         if self.last_error is not None:
             raise self.last_error
         sync_round = last_round + 1
@@ -65,3 +65,6 @@ class Transport(celestorm.transport.Transport, ABC):
 
     def _connection_factory(self, *args: t.Any, **kwargs: t.Any):
         return Connection(self.accum)
+
+    def _packager_factory(self, *args: t.Any, **kwargs: t.Any):
+        return Package

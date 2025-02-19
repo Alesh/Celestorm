@@ -4,7 +4,7 @@ from collections import deque
 
 from celestorm.execution import ExecutionError, logger
 from celestorm.execution import Layer
-from tests.impl.dclscud import Storage, Transport
+from tests.dclscud import Storage, Transport
 
 
 async def test_storage(caplog, cud_bundles_maker, cud_state_maker):

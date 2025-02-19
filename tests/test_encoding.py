@@ -6,8 +6,8 @@ from datetime import datetime
 import pytest
 
 from celestorm.encoding.errors import VerifyError, DeserializeError
-from tests.impl import encoding
-from tests.impl.dclscud import Instruction, Package
+from tests.dclscud import encoding
+from tests.dclscud import Instruction, Package
 from tests.models import Account, Message
 
 if encoding.SIGNING_SUPPORTED:
