@@ -1,0 +1,33 @@
+services:
+
+  validator:
+    image: validator
+    platform: "linux/amd64"
+    build:
+      context: ./ci
+      dockerfile: Dockerfile.validator
+    environment:
+      - VALIDATOR_COUNT=1
+      - BRIDGE_COUNT=1
+
+  bridge:
+    image: bridge
+    platform: "linux/amd64"
+    build:
+      context: ./ci
+      dockerfile: Dockerfile.bridge
+    volumes:
+      - cs-testnet-credentials:/credentials
+      - cs-testnet-genesis:/genesis
+
+  light:
+    image: light
+    platform: "linux/amd64"
+    build:
+      context: ./ci
+      dockerfile: Dockerfile.bridge
+    volumes:
+      - cs-testnet-credentials:/credentials
+      - cs-testnet-genesis:/genesis
+    environment:
+      - NODE_TYPE=light

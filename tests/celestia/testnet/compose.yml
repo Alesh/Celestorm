@@ -1,0 +1,74 @@
+volumes:
+
+  # local volume where node's credentials can persist
+  cs-testnet-credentials:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: './credentials'
+
+  # a temporary fs where the genesis hash is announced
+  cs-testnet-genesis:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+
+networks:
+  testnet:
+    name: cs_testnet
+    driver: bridge
+
+x-common-config: &common-config
+
+  volumes:
+    - cs-testnet-credentials:/credentials
+    - cs-testnet-genesis:/genesis
+
+  networks:
+    - testnet
+
+name: cs_testnet
+
+services:
+
+  validator-0:
+    extends:
+      file: ci/reference.yml
+      service: validator
+    <<: *common-config
+    environment:
+      - LIGHT_COUNT=2
+      - NODE_ID=0
+    ports:
+      - 9090:9090
+
+  bridge-0:
+    extends:
+      file: ci/reference.yml
+      service: bridge
+    <<: *common-config
+    environment:
+      - NODE_ID=0
+    ports:
+      - 26658:26658
+
+  light-0:
+    extends:
+      file: ci/reference.yml
+      service: light
+    <<: *common-config
+    environment:
+      - NODE_ID=0
+    ports:
+      - 0:26658
+
+  light-1:
+    extends:
+      file: ci/reference.yml
+      service: light
+    <<: *common-config
+    environment:
+      - NODE_ID=1
+    ports:
+      - 0:26658
