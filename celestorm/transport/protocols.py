@@ -31,7 +31,7 @@ class Connection[U](t.Protocol):
     def close(self):
         """ Forcibly closes the current network connection. """
 
-    async def open_connection(self, *args: t.Any, **kwargs: t.Any) -> None:
+    def open_connection(self, *args: t.Any, **kwargs: t.Any) -> t.Coroutine[t.Any, t.Any, None]:
         """ Establishes a connection to the network.
 
         Args:
@@ -39,7 +39,7 @@ class Connection[U](t.Protocol):
             kwargs: Reserved named arguments.
         """
 
-    async def close_connection(self) -> None:
+    def close_connection(self) -> t.Coroutine[t.Any, t.Any, None]:
         """ Closes the network connection.
         """
 

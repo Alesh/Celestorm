@@ -108,7 +108,7 @@ class Transport[U](ABC):
             assert isinstance(connection, Connection)
             try:
                 self._connections.add(connection)
-                await connection.open_connection()
+                await connection.open_connection(*args, **kwargs)
                 yield _receiver(connection)
             finally:
                 self._connections.remove(connection)
